@@ -79,26 +79,60 @@ def main():
                 for action in actions:
                     audio_controller.handle_action(action)
             
-            # Display status on frame
+            # Display status on frame with percentages
             status = audio_controller.get_status()
-            y_offset = 30
-            cv2.putText(processed_frame, f"Bass: {status['bass']:+.1f}", (10, y_offset), 
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-            y_offset += 30
-            cv2.putText(processed_frame, f"Treble: {status['treble']:+.1f}", (10, y_offset),
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-            y_offset += 30
-            cv2.putText(processed_frame, f"Speech: {status['speech']:+.1f}", (10, y_offset),
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-            y_offset += 30
-            cv2.putText(processed_frame, f"Volume: {status['volume']:.2f}", (10, y_offset),
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-            y_offset += 30
-            cv2.putText(processed_frame, f"Echo: {status['echo']}", (10, y_offset),
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
-            y_offset += 30
-            cv2.putText(processed_frame, f"Reverb: {status['reverb']}", (10, y_offset),
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
+            
+            # Convert values to percentages (based on -2.0 to +2.0 range for EQ, 0-2 for volume)
+            bass_pct = int((status['bass'] + 2.0) / 4.0 * 100)
+            treble_pct = int((status['treble'] + 2.0) / 4.0 * 100)
+            speech_pct = int((status['speech'] + 2.0) / 4.0 * 100)
+            volume_pct = int(status['volume'] / 2.0 * 100)
+            
+            # Create semi-transparent overlay for better readability
+            overlay = processed_frame.copy()
+            cv2.rectangle(overlay, (5, 5), (320, 240), (0, 0, 0), -1)
+            cv2.addWeighted(overlay, 0.6, processed_frame, 0.4, 0, processed_frame)
+            
+            # Display parameters with percentages and progress bars
+            y_offset = 35
+            
+            # Bass
+            cv2.putText(processed_frame, f"BASS: {bass_pct}%", (15, y_offset), 
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+            cv2.rectangle(processed_frame, (140, y_offset-18), (300, y_offset-5), (50, 50, 50), -1)
+            cv2.rectangle(processed_frame, (140, y_offset-18), (140 + int(bass_pct * 1.6), y_offset-5), (0, 255, 0), -1)
+            y_offset += 35
+            
+            # Treble
+            cv2.putText(processed_frame, f"TREBLE: {treble_pct}%", (15, y_offset),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+            cv2.rectangle(processed_frame, (140, y_offset-18), (300, y_offset-5), (50, 50, 50), -1)
+            cv2.rectangle(processed_frame, (140, y_offset-18), (140 + int(treble_pct * 1.6), y_offset-5), (0, 255, 0), -1)
+            y_offset += 35
+            
+            # Speech Clarity
+            cv2.putText(processed_frame, f"SPEECH: {speech_pct}%", (15, y_offset),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+            cv2.rectangle(processed_frame, (140, y_offset-18), (300, y_offset-5), (50, 50, 50), -1)
+            cv2.rectangle(processed_frame, (140, y_offset-18), (140 + int(speech_pct * 1.6), y_offset-5), (0, 255, 0), -1)
+            y_offset += 35
+            
+            # Volume
+            cv2.putText(processed_frame, f"VOLUME: {volume_pct}%", (15, y_offset),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 0), 2)
+            cv2.rectangle(processed_frame, (140, y_offset-18), (300, y_offset-5), (50, 50, 50), -1)
+            cv2.rectangle(processed_frame, (140, y_offset-18), (140 + int(volume_pct * 1.6), y_offset-5), (255, 255, 0), -1)
+            y_offset += 35
+            
+            # Effects
+            echo_color = (0, 255, 255) if status['echo'] == "ON" else (100, 100, 100)
+            reverb_color = (0, 255, 255) if status['reverb'] == "ON" else (100, 100, 100)
+            
+            cv2.putText(processed_frame, f"ECHO: {status['echo']}", (15, y_offset),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.7, echo_color, 2)
+            y_offset += 35
+            cv2.putText(processed_frame, f"REVERB: {status['reverb']}", (15, y_offset),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.7, reverb_color, 2)
             
             # Print status to console
             print_status(status)
